@@ -1,6 +1,9 @@
 # Test files (temporary)
 test-plugin-structure.php
 
+# Demo files (for preview only)
+demo-interface.html
+
 # WordPress specific
 .htaccess
 wp-config.php
