@@ -1,0 +1,37 @@
+# Test files (temporary)
+test-plugin-structure.php
+
+# Demo files (for preview only)
+demo-interface.html
+
+# WordPress specific
+.htaccess
+wp-config.php
+wp-content/uploads/
+wp-content/cache/
+wp-content/backup-db/
+wp-content/advanced-cache.php
+wp-content/wp-cache-config.php
+wp-content/blogs.dir/
+wp-content/upgrade/
+wp-content/backup-db/
+wp-content/backups/
+
+# Development files
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Compiled files
+*.mo
+
+# Dependencies
+node_modules/
+vendor/
