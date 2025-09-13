@@ -3,8 +3,8 @@
  * Plugin Name: FP WordPress Role Manager
  * Plugin URI: https://github.com/franpass87/FP-WP-Role-Manager-
  * Description: Gestione ruoli WordPress per controllare la visibilità dei menu admin. Permette di definire quali plugin/sezioni amministrative possono vedere specifici ruoli utente.
- * Version: 1.0.0
- * Author: Francesco Passarella
+ * Version: 1.0
+ * Author: Francesco Passeri
  * License: GPL v2 or later
  * Text Domain: fp-wp-role-manager
  * Domain Path: /languages
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('FP_ROLE_MANAGER_VERSION', '1.0.0');
+define('FP_ROLE_MANAGER_VERSION', '1.0');
 define('FP_ROLE_MANAGER_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('FP_ROLE_MANAGER_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('FP_ROLE_MANAGER_PLUGIN_FILE', __FILE__);
