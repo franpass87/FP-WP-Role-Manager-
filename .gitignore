@@ -35,3 +35,8 @@ Thumbs.db
 # Dependencies
 node_modules/
 vendor/
+
+# Build artifacts
+*.zip
+test-build/
+fp-wp-role-manager/
