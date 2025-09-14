@@ -2,7 +2,7 @@
 /**
  * Plugin Name: FP WordPress Role Manager
  * Plugin URI: https://github.com/franpass87/FP-WP-Role-Manager-
- * Description: Gestione ruoli WordPress per controllare la visibilità dei menu admin. Permette di definire quali plugin/sezioni amministrative possono vedere specifici ruoli utente.
+ * Description: Gestione avanzata dei ruoli WordPress per controllare la visibilità dei menu amministrativi e l'accesso ai plugin. Configura quali sezioni possono vedere specifici ruoli utente.
  * Version: 1.0
  * Author: Francesco Passeri
  * License: GPL v2 or later
@@ -61,36 +61,9 @@ class FP_WP_Role_Manager {
      * Plugin activation
      */
     public function activate() {
-        // Create restaurant manager role if it doesn't exist
-        if (!get_role('restaurant_manager')) {
-            add_role(
-                'restaurant_manager',
-                __('Restaurant Manager', 'fp-wp-role-manager'),
-                array(
-                    'read' => true,
-                    'edit_posts' => true,
-                    'upload_files' => true,
-                    'manage_categories' => true,
-                )
-            );
-        }
-        
-        // Set default options
+        // Initialize empty settings if they don't exist
         if (!get_option('fp_role_manager_settings')) {
-            $default_settings = array(
-                'restaurant_manager' => array(
-                    'allowed_menus' => array(
-                        'edit.php', // Posts
-                        'upload.php', // Media
-                        'users.php', // Users (limited)
-                        'fp-role-manager', // This plugin's settings
-                    ),
-                    'allowed_plugins' => array(
-                        'restaurant-reservations', // Example restaurant plugin
-                        'woocommerce', // Example for restaurant orders
-                    )
-                )
-            );
+            $default_settings = array();
             update_option('fp_role_manager_settings', $default_settings);
         }
         
@@ -174,36 +147,77 @@ class FP_WP_Role_Manager {
         $settings = get_option('fp_role_manager_settings', array());
         
         foreach ($user_roles as $role) {
-            if (isset($settings[$role]) && isset($settings[$role]['allowed_menus'])) {
-                $allowed_menus = $settings[$role]['allowed_menus'];
-                
-                // Filter main menu
-                foreach ($menu as $key => $menu_item) {
-                    if (isset($menu_item[2])) {
-                        $menu_slug = $menu_item[2];
-                        
-                        // Always allow dashboard
-                        if ($menu_slug === 'index.php') {
-                            continue;
-                        }
-                        
-                        // Check if menu is allowed
-                        if (!in_array($menu_slug, $allowed_menus)) {
-                            unset($menu[$key]);
+            if (isset($settings[$role])) {
+                // Filter by allowed menus
+                if (isset($settings[$role]['allowed_menus'])) {
+                    $allowed_menus = $settings[$role]['allowed_menus'];
+                    
+                    // Filter main menu
+                    foreach ($menu as $key => $menu_item) {
+                        if (isset($menu_item[2])) {
+                            $menu_slug = $menu_item[2];
+                            
+                            // Always allow dashboard
+                            if ($menu_slug === 'index.php') {
+                                continue;
+                            }
+                            
+                            // Check if menu is allowed
+                            if (!in_array($menu_slug, $allowed_menus)) {
+                                // Additional check for plugin-specific menus
+                                if ($this->is_plugin_menu_allowed($menu_slug, $role, $settings)) {
+                                    continue;
+                                }
+                                unset($menu[$key]);
+                            }
                         }
                     }
-                }
-                
-                // Filter submenus
-                foreach ($submenu as $parent_slug => $submenu_items) {
-                    if (!in_array($parent_slug, $allowed_menus)) {
-                        unset($submenu[$parent_slug]);
+                    
+                    // Filter submenus
+                    foreach ($submenu as $parent_slug => $submenu_items) {
+                        if (!in_array($parent_slug, $allowed_menus)) {
+                            // Check if it's a plugin menu that should be allowed
+                            if (!$this->is_plugin_menu_allowed($parent_slug, $role, $settings)) {
+                                unset($submenu[$parent_slug]);
+                            }
+                        }
                     }
                 }
                 
                 break; // Use first matching role
             }
         }
+    }
+    
+    /**
+     * Check if a plugin menu should be allowed for a role
+     */
+    private function is_plugin_menu_allowed($menu_slug, $role, $settings) {
+        if (!isset($settings[$role]['allowed_plugins'])) {
+            return false;
+        }
+        
+        $allowed_plugins = $settings[$role]['allowed_plugins'];
+        
+        // Get all active plugins and their slugs
+        $active_plugins = get_option('active_plugins', array());
+        
+        foreach ($active_plugins as $plugin_path) {
+            $plugin_slug = dirname($plugin_path);
+            
+            // If this plugin is in the allowed list, check if the menu belongs to it
+            if (in_array($plugin_slug, $allowed_plugins)) {
+                // Check if menu slug contains plugin identifier
+                // This is a simple check - could be improved with more sophisticated matching
+                if (strpos($menu_slug, $plugin_slug) !== false || 
+                    strpos($menu_slug, str_replace('-', '_', $plugin_slug)) !== false ||
+                    strpos($menu_slug, str_replace('_', '-', $plugin_slug)) !== false) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
     }
     
     /**
@@ -221,8 +235,8 @@ class FP_WP_Role_Manager {
             <?php endif; ?>
             
             <div class="fp-role-info">
-                <h4><?php _e('Informazioni Plugin', 'fp-wp-role-manager'); ?></h4>
-                <p><?php _e('Questo plugin permette di controllare quali menu amministrativi possono vedere i diversi ruoli utente. Configurare attentamente i permessi per garantire sicurezza e funzionalità.', 'fp-wp-role-manager'); ?></p>
+                <h4><?php _e('Gestione Ruoli WordPress', 'fp-wp-role-manager'); ?></h4>
+                <p><?php _e('Configura quali menu amministrativi e plugin possono vedere i diversi ruoli utente. Seleziona un ruolo per iniziare la configurazione.', 'fp-wp-role-manager'); ?></p>
             </div>
             
             <form method="post" action="options.php" id="fp-role-manager-form">
@@ -231,89 +245,164 @@ class FP_WP_Role_Manager {
                 do_settings_sections('fp_role_manager_settings');
                 
                 $settings = get_option('fp_role_manager_settings', array());
+                $selected_role = isset($_GET['role']) ? sanitize_text_field($_GET['role']) : '';
+                
+                // Get all WordPress roles
+                $wp_roles = wp_roles();
+                $available_roles = array();
+                foreach ($wp_roles->get_names() as $role => $name) {
+                    // Skip administrator role
+                    if ($role !== 'administrator') {
+                        $available_roles[$role] = $name;
+                    }
+                }
                 ?>
                 
                 <table class="form-table">
                     <tr>
                         <th scope="row">
-                            <label for="restaurant_manager_menus"><?php _e('Restaurant Manager - Menu Consentiti', 'fp-wp-role-manager'); ?></label>
+                            <label for="fp_role_selector"><?php _e('Seleziona Ruolo da Configurare', 'fp-wp-role-manager'); ?></label>
                         </th>
                         <td>
-                            <fieldset>
-                                <legend class="screen-reader-text"><?php _e('Menu consentiti per Restaurant Manager', 'fp-wp-role-manager'); ?></legend>
-                                
-                                <?php
-                                $available_menus = array(
-                                    'edit.php' => __('Posts (Articoli)', 'fp-wp-role-manager'),
-                                    'upload.php' => __('Media (File multimediali)', 'fp-wp-role-manager'),
-                                    'edit.php?post_type=page' => __('Pages (Pagine)', 'fp-wp-role-manager'),
-                                    'edit-comments.php' => __('Comments (Commenti)', 'fp-wp-role-manager'),
-                                    'themes.php' => __('Appearance (Aspetto)', 'fp-wp-role-manager'),
-                                    'plugins.php' => __('Plugins', 'fp-wp-role-manager'),
-                                    'users.php' => __('Users (Utenti)', 'fp-wp-role-manager'),
-                                    'tools.php' => __('Tools (Strumenti)', 'fp-wp-role-manager'),
-                                    'options-general.php' => __('Settings (Impostazioni)', 'fp-wp-role-manager'),
-                                    'fp-role-manager' => __('Role Manager', 'fp-wp-role-manager'),
-                                );
-                                
-                                $allowed_menus = isset($settings['restaurant_manager']['allowed_menus']) ? $settings['restaurant_manager']['allowed_menus'] : array();
-                                
-                                foreach ($available_menus as $menu_slug => $menu_name) {
-                                    $checked = in_array($menu_slug, $allowed_menus) ? 'checked="checked"' : '';
-                                    echo '<label><input type="checkbox" name="fp_role_manager_settings[restaurant_manager][allowed_menus][]" value="' . esc_attr($menu_slug) . '" ' . $checked . '> ' . esc_html($menu_name) . '</label><br>';
-                                }
-                                ?>
-                            </fieldset>
-                            <p class="description"><?php _e('Seleziona i menu che il Restaurant Manager può vedere nell\'admin di WordPress. Il menu Dashboard è sempre visibile.', 'fp-wp-role-manager'); ?></p>
+                            <select name="fp_role_selector" id="fp_role_selector" class="fp-role-selector">
+                                <option value=""><?php _e('-- Seleziona un ruolo --', 'fp-wp-role-manager'); ?></option>
+                                <?php foreach ($available_roles as $role => $name): ?>
+                                    <option value="<?php echo esc_attr($role); ?>" <?php selected($selected_role, $role); ?>>
+                                        <?php echo esc_html($name); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <p class="description"><?php _e('Seleziona il ruolo per il quale vuoi configurare i permessi di accesso.', 'fp-wp-role-manager'); ?></p>
                         </td>
                     </tr>
                 </table>
                 
-                <div class="fp-warning">
-                    <h4><?php _e('Attenzione!', 'fp-wp-role-manager'); ?></h4>
-                    <p><?php _e('Assicurati di selezionare almeno il menu "Role Manager" per permettere ai Restaurant Manager di accedere a questa configurazione se necessario. Rimuovere tutti i menu potrebbe rendere inutilizzabile l\'area admin per questo ruolo.', 'fp-wp-role-manager'); ?></p>
-                </div>
-                
-                <?php submit_button(); ?>
+                <?php if ($selected_role && isset($available_roles[$selected_role])): ?>
+                    <div class="fp-role-section active" data-role="<?php echo esc_attr($selected_role); ?>">
+                        <h3><?php echo sprintf(__('Configurazione per %s', 'fp-wp-role-manager'), esc_html($available_roles[$selected_role])); ?></h3>
+                        
+                        <table class="form-table">
+                            <tr>
+                                <th scope="row">
+                                    <label><?php _e('Menu Amministrativi Consentiti', 'fp-wp-role-manager'); ?></label>
+                                </th>
+                                <td>
+                                    <fieldset>
+                                        <legend class="screen-reader-text"><?php _e('Menu consentiti', 'fp-wp-role-manager'); ?></legend>
+                                        
+                                        <?php
+                                        $available_menus = array(
+                                            'edit.php' => __('Posts (Articoli)', 'fp-wp-role-manager'),
+                                            'upload.php' => __('Media (File multimediali)', 'fp-wp-role-manager'),
+                                            'edit.php?post_type=page' => __('Pages (Pagine)', 'fp-wp-role-manager'),
+                                            'edit-comments.php' => __('Comments (Commenti)', 'fp-wp-role-manager'),
+                                            'themes.php' => __('Appearance (Aspetto)', 'fp-wp-role-manager'),
+                                            'plugins.php' => __('Plugins', 'fp-wp-role-manager'),
+                                            'users.php' => __('Users (Utenti)', 'fp-wp-role-manager'),
+                                            'tools.php' => __('Tools (Strumenti)', 'fp-wp-role-manager'),
+                                            'options-general.php' => __('Settings (Impostazioni)', 'fp-wp-role-manager'),
+                                            'fp-role-manager' => __('Role Manager', 'fp-wp-role-manager'),
+                                        );
+                                        
+                                        $allowed_menus = isset($settings[$selected_role]['allowed_menus']) ? $settings[$selected_role]['allowed_menus'] : array();
+                                        
+                                        foreach ($available_menus as $menu_slug => $menu_name) {
+                                            $checked = in_array($menu_slug, $allowed_menus) ? 'checked="checked"' : '';
+                                            echo '<label><input type="checkbox" name="fp_role_manager_settings[' . esc_attr($selected_role) . '][allowed_menus][]" value="' . esc_attr($menu_slug) . '" ' . $checked . '> ' . esc_html($menu_name) . '</label><br>';
+                                        }
+                                        ?>
+                                    </fieldset>
+                                    <p class="description"><?php _e('Seleziona i menu che questo ruolo può vedere. Il menu Dashboard è sempre visibile.', 'fp-wp-role-manager'); ?></p>
+                                </td>
+                            </tr>
+                            
+                            <tr>
+                                <th scope="row">
+                                    <label><?php _e('Plugin Consentiti', 'fp-wp-role-manager'); ?></label>
+                                </th>
+                                <td>
+                                    <fieldset>
+                                        <legend class="screen-reader-text"><?php _e('Plugin consentiti', 'fp-wp-role-manager'); ?></legend>
+                                        
+                                        <?php
+                                        // Get all active plugins
+                                        $active_plugins = get_option('active_plugins', array());
+                                        $allowed_plugins = isset($settings[$selected_role]['allowed_plugins']) ? $settings[$selected_role]['allowed_plugins'] : array();
+                                        
+                                        if (!empty($active_plugins)) {
+                                            foreach ($active_plugins as $plugin_path) {
+                                                $plugin_data = get_plugin_data(WP_PLUGIN_DIR . '/' . $plugin_path);
+                                                $plugin_name = $plugin_data['Name'];
+                                                $plugin_slug = dirname($plugin_path);
+                                                
+                                                // Skip this plugin
+                                                if (strpos($plugin_path, 'fp-wp-role-manager') !== false) {
+                                                    continue;
+                                                }
+                                                
+                                                $checked = in_array($plugin_slug, $allowed_plugins) ? 'checked="checked"' : '';
+                                                echo '<label><input type="checkbox" name="fp_role_manager_settings[' . esc_attr($selected_role) . '][allowed_plugins][]" value="' . esc_attr($plugin_slug) . '" ' . $checked . '> ' . esc_html($plugin_name) . '</label><br>';
+                                            }
+                                        } else {
+                                            echo '<p>' . __('Nessun plugin attivo trovato.', 'fp-wp-role-manager') . '</p>';
+                                        }
+                                        ?>
+                                    </fieldset>
+                                    <p class="description"><?php _e('Seleziona i plugin che questo ruolo può utilizzare. I menu dei plugin non selezionati saranno nascosti.', 'fp-wp-role-manager'); ?></p>
+                                </td>
+                            </tr>
+                        </table>
+                        
+                        <div class="fp-warning">
+                            <h4><?php _e('Attenzione!', 'fp-wp-role-manager'); ?></h4>
+                            <p><?php _e('Configurare attentamente i permessi. Rimuovere tutti i menu potrebbe rendere inutilizzabile l\'area admin per questo ruolo.', 'fp-wp-role-manager'); ?></p>
+                        </div>
+                        
+                        <?php submit_button(); ?>
+                    </div>
+                <?php endif; ?>
             </form>
             
-            <h2><?php _e('Informazioni Ruoli', 'fp-wp-role-manager'); ?></h2>
-            <div class="card">
-                <h3><?php _e('Restaurant Manager', 'fp-wp-role-manager'); ?></h3>
-                <p><?php _e('Questo ruolo è progettato per gestori di ristoranti che devono accedere solo a funzionalità specifiche dell\'admin WordPress, come la gestione di prenotazioni, menu, e contenuti relativi al ristorante.', 'fp-wp-role-manager'); ?></p>
-                <p><strong><?php _e('Capacità del ruolo:', 'fp-wp-role-manager'); ?></strong></p>
-                <ul>
-                    <li><?php _e('read - Lettura contenuti', 'fp-wp-role-manager'); ?></li>
-                    <li><?php _e('edit_posts - Modifica post', 'fp-wp-role-manager'); ?></li>
-                    <li><?php _e('upload_files - Caricamento file media', 'fp-wp-role-manager'); ?></li>
-                    <li><?php _e('manage_categories - Gestione categorie', 'fp-wp-role-manager'); ?></li>
-                </ul>
-                
-                <p><strong><?php _e('Casi d\'uso tipici:', 'fp-wp-role-manager'); ?></strong></p>
-                <ul>
-                    <li><?php _e('Gestione contenuti del sito ristorante', 'fp-wp-role-manager'); ?></li>
-                    <li><?php _e('Caricamento immagini menu e piatti', 'fp-wp-role-manager'); ?></li>
-                    <li><?php _e('Accesso a plugin di prenotazioni', 'fp-wp-role-manager'); ?></li>
-                    <li><?php _e('Gestione ordini online (se WooCommerce è abilitato)', 'fp-wp-role-manager'); ?></li>
-                </ul>
-            </div>
-            
-            <div class="card">
-                <h3><?php _e('Utenti con ruolo Restaurant Manager', 'fp-wp-role-manager'); ?></h3>
-                <?php
-                $restaurant_managers = get_users(array('role' => 'restaurant_manager'));
-                if (!empty($restaurant_managers)) {
-                    echo '<ul>';
-                    foreach ($restaurant_managers as $user) {
-                        echo '<li>' . esc_html($user->display_name) . ' (' . esc_html($user->user_email) . ')</li>';
-                    }
-                    echo '</ul>';
-                } else {
-                    echo '<p>' . __('Nessun utente ha attualmente il ruolo Restaurant Manager.', 'fp-wp-role-manager') . '</p>';
-                    echo '<p><a href="' . admin_url('users.php') . '" class="button">' . __('Gestisci Utenti', 'fp-wp-role-manager') . '</a></p>';
-                }
-                ?>
-            </div>
+            <?php if (!empty($settings)): ?>
+                <h2><?php _e('Ruoli Configurati', 'fp-wp-role-manager'); ?></h2>
+                <?php foreach ($settings as $role => $config): ?>
+                    <div class="card">
+                        <h3><?php echo esc_html(isset($available_roles[$role]) ? $available_roles[$role] : $role); ?></h3>
+                        <p><strong><?php _e('Menu consentiti:', 'fp-wp-role-manager'); ?></strong></p>
+                        <ul>
+                            <?php 
+                            if (isset($config['allowed_menus']) && !empty($config['allowed_menus'])) {
+                                foreach ($config['allowed_menus'] as $menu) {
+                                    echo '<li>' . esc_html($menu) . '</li>';
+                                }
+                            } else {
+                                echo '<li>' . __('Nessun menu configurato', 'fp-wp-role-manager') . '</li>';
+                            }
+                            ?>
+                        </ul>
+                        
+                        <p><strong><?php _e('Plugin consentiti:', 'fp-wp-role-manager'); ?></strong></p>
+                        <ul>
+                            <?php 
+                            if (isset($config['allowed_plugins']) && !empty($config['allowed_plugins'])) {
+                                foreach ($config['allowed_plugins'] as $plugin) {
+                                    echo '<li>' . esc_html($plugin) . '</li>';
+                                }
+                            } else {
+                                echo '<li>' . __('Nessun plugin configurato', 'fp-wp-role-manager') . '</li>';
+                            }
+                            ?>
+                        </ul>
+                        
+                        <p><a href="<?php echo admin_url('tools.php?page=fp-role-manager&role=' . urlencode($role)); ?>" class="button"><?php _e('Modifica Configurazione', 'fp-wp-role-manager'); ?></a></p>
+                    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <div class="card">
+                    <h3><?php _e('Nessuna Configurazione', 'fp-wp-role-manager'); ?></h3>
+                    <p><?php _e('Non ci sono ancora configurazioni salvate. Seleziona un ruolo per iniziare.', 'fp-wp-role-manager'); ?></p>
+                </div>
+            <?php endif; ?>
         </div>
         <?php
     }
