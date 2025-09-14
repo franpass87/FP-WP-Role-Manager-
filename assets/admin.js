@@ -1,6 +1,18 @@
 jQuery(document).ready(function($) {
     // Role Manager Admin JavaScript
     
+    // Handle role selector change
+    $('#fp_role_selector').on('change', function() {
+        var selectedRole = $(this).val();
+        
+        if (selectedRole) {
+            // Redirect to the page with role parameter
+            var currentUrl = window.location.href.split('?')[0];
+            var newUrl = currentUrl + '?page=fp-role-manager&role=' + encodeURIComponent(selectedRole);
+            window.location.href = newUrl;
+        }
+    });
+    
     // Toggle all checkboxes functionality
     $('.fp-role-manager-toggle-all').on('change', function() {
         var target = $(this).data('target');
@@ -24,19 +36,26 @@ jQuery(document).ready(function($) {
     
     // Form validation
     $('#fp-role-manager-form').on('submit', function(e) {
-        var hasSelection = false;
+        var selectedRole = $('#fp_role_selector').val();
         
-        $('input[type="checkbox"]:checked').each(function() {
-            if ($(this).attr('name').indexOf('allowed_menus') !== -1) {
-                hasSelection = true;
-                return false;
-            }
-        });
-        
-        if (!hasSelection) {
-            alert('Seleziona almeno un menu per il ruolo.');
+        if (!selectedRole) {
+            alert('Seleziona un ruolo per configurare i permessi.');
             e.preventDefault();
             return false;
+        }
+        
+        // Check if at least one menu is selected
+        var hasMenuSelection = false;
+        $('input[name*="[allowed_menus]"]:checked').each(function() {
+            hasMenuSelection = true;
+            return false;
+        });
+        
+        if (!hasMenuSelection) {
+            if (!confirm('Nessun menu selezionato. Il ruolo non avrà accesso a nessun menu amministrativo. Continuare?')) {
+                e.preventDefault();
+                return false;
+            }
         }
     });
 });

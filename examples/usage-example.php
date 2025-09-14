@@ -3,7 +3,7 @@
  * Example usage and demonstration of FP WordPress Role Manager
  * 
  * This file shows how the plugin would work in a real WordPress environment
- * and demonstrates the functionality for role management.
+ * and demonstrates the functionality for generic role management.
  */
 
 // This would normally be in a WordPress environment
@@ -13,75 +13,83 @@ echo "FP WordPress Role Manager - Example Usage\n";
 echo "=========================================\n\n";
 
 echo "1. PLUGIN ACTIVATION:\n";
-echo "   - Creates 'restaurant_manager' role automatically\n";
-echo "   - Sets default capabilities: read, edit_posts, upload_files, manage_categories\n";
-echo "   - Creates default menu restrictions\n\n";
+echo "   - Starts with empty configuration (no preset roles)\n";
+echo "   - Admin can configure any existing WordPress role\n";
+echo "   - No default restrictions or placeholders\n\n";
 
-echo "2. DEFAULT CONFIGURATION FOR RESTAURANT MANAGER:\n";
-echo "   Allowed admin menus:\n";
-echo "   ✓ Dashboard (sempre visibile)\n";
-echo "   ✓ Posts (Articoli) - per gestire contenuti\n";
-echo "   ✓ Media (File multimediali) - per immagini menu\n";
-echo "   ✓ Role Manager - per accedere alle impostazioni\n\n";
-echo "   Hidden admin menus:\n";
-echo "   ✗ Pages (Pagine)\n";
-echo "   ✗ Comments (Commenti)\n";
-echo "   ✗ Appearance (Aspetto)\n";
-echo "   ✗ Plugins\n";
-echo "   ✗ Users (Utenti)\n";
-echo "   ✗ Tools (Strumenti)\n";
-echo "   ✗ Settings (Impostazioni)\n\n";
+echo "2. CONFIGURATION WORKFLOW:\n";
+echo "   Step 1: Go to Tools > Role Manager\n";
+echo "   Step 2: Select role from dropdown (editor, author, contributor, custom roles)\n";
+echo "   Step 3: Choose allowed admin menus\n";
+echo "   Step 4: Select allowed plugins\n";
+echo "   Step 5: Save configuration\n\n";
 
 echo "3. EXAMPLE SCENARIOS:\n\n";
 
-echo "   Scenario A: Restaurant Manager login\n";
-echo "   ------------------------------------\n";
-echo "   User: mario@ristorante.it (role: restaurant_manager)\n";
-echo "   Sees only:\n";
-echo "   - Dashboard\n";
-echo "   - Posts (per aggiornare menu del giorno)\n";
-echo "   - Media (per caricare foto piatti)\n";
-echo "   - Role Manager settings\n\n";
+echo "   Scenario A: Content Editor Role\n";
+echo "   --------------------------------\n";
+echo "   Role: editor\n";
+echo "   Allowed menus:\n";
+echo "   ✓ Dashboard\n";
+echo "   ✓ Posts (Articoli)\n";
+echo "   ✓ Media (File multimediali)\n";
+echo "   ✓ Pages (Pagine)\n";
+echo "   ✓ Comments (Commenti)\n";
+echo "   \n";
+echo "   Allowed plugins:\n";
+echo "   ✓ Yoast SEO\n";
+echo "   ✓ Classic Editor\n\n";
 
-echo "   Scenario B: Administrator login\n";
+echo "   Scenario B: E-commerce Manager Role\n";
+echo "   -----------------------------------\n";
+echo "   Role: shop_manager (custom role)\n";
+echo "   Allowed menus:\n";
+echo "   ✓ Dashboard\n";
+echo "   ✓ Posts (per descrizioni prodotti)\n";
+echo "   ✓ Media (per immagini prodotti)\n";
+echo "   \n";
+echo "   Allowed plugins:\n";
+echo "   ✓ WooCommerce\n";
+echo "   ✓ WooCommerce Extensions\n\n";
+
+echo "   Scenario C: Support Staff Role\n";
 echo "   ------------------------------\n";
-echo "   User: admin@site.com (role: administrator)\n";
-echo "   Sees all menus:\n";
-echo "   - Complete WordPress admin interface\n";
-echo "   - Can configure Role Manager settings\n";
-echo "   - Can manage all users and permissions\n\n";
+echo "   Role: support_agent (custom role)\n";
+echo "   Allowed menus:\n";
+echo "   ✓ Dashboard\n";
+echo "   ✓ Users (Utenti) - per supporto clienti\n";
+echo "   \n";
+echo "   Allowed plugins:\n";
+echo "   ✓ Help Desk Plugin\n";
+echo "   ✓ Live Chat Plugin\n\n";
 
 echo "4. CUSTOMIZATION EXAMPLES:\n\n";
 
-echo "   Adding WooCommerce access for orders:\n";
-echo "   - Go to Tools > Role Manager\n";
-echo "   - Check 'WooCommerce' in allowed menus\n";
-echo "   - Restaurant manager can now see orders\n\n";
+echo "   Adding custom post type access:\n";
+echo "   - Plugin automatically detects custom post types\n";
+echo "   - Add 'edit.php?post_type=products' to allowed menus\n";
+echo "   - Role can now manage products\n\n";
 
-echo "   Adding custom post types:\n";
-echo "   - Plugin automatically filters custom post type menus\n";
-echo "   - Add 'edit.php?post_type=restaurant_menu' to allowed menus\n";
-echo "   - Restaurant manager can manage restaurant menus\n\n";
+echo "   Restricting plugin access:\n";
+echo "   - Uncheck plugins in the configuration\n";
+echo "   - Plugin menus will be hidden for that role\n";
+echo "   - Direct URL access is also blocked\n\n";
 
 echo "5. SECURITY FEATURES:\n";
 echo "   ✓ Admin menus are completely hidden (not just CSS)\n";
+echo "   ✓ Plugin menus filtered based on permissions\n";
 echo "   ✓ Direct URL access is also blocked\n";
 echo "   ✓ Administrators always have full access\n";
 echo "   ✓ Settings are stored securely in WordPress options\n\n";
 
 echo "6. PLUGIN INTEGRATION EXAMPLES:\n\n";
 
-echo "   Restaurant Reservations Plugin:\n";
-echo "   - Add 'restaurant-reservations' to allowed menus\n";
-echo "   - Manager can handle bookings without full admin access\n\n";
-
-echo "   Events Calendar Plugin:\n";
-echo "   - Add 'edit.php?post_type=tribe_events' to allowed menus\n";
-echo "   - Manager can create restaurant events\n\n";
-
-echo "   OpenTable Integration:\n";
-echo "   - Add custom plugin menu to allowed list\n";
-echo "   - Manager can sync reservations\n\n";
+echo "   Popular Plugin Compatibility:\n";
+echo "   - WooCommerce: Control access to shop management\n";
+echo "   - Yoast SEO: Allow/deny SEO configuration\n";
+echo "   - Contact Form 7: Control form management access\n";
+echo "   - Backup plugins: Restrict backup operations\n";
+echo "   - Custom post type plugins: Granular content control\n\n";
 
 echo "7. REAL-WORLD IMPLEMENTATION:\n";
 echo "   File: /wp-content/plugins/fp-wp-role-manager/fp-wp-role-manager.php\n";
@@ -90,11 +98,19 @@ echo "   To install:\n";
 echo "   1. Upload plugin files to WordPress\n";
 echo "   2. Activate through Plugins menu\n";
 echo "   3. Go to Tools > Role Manager\n";
-echo "   4. Configure permissions\n";
-echo "   5. Create users with restaurant_manager role\n\n";
+echo "   4. Select role to configure\n";
+echo "   5. Configure menus and plugins\n";
+echo "   6. Save settings\n\n";
 
 echo "   Configuration URL:\n";
 echo "   wp-admin/tools.php?page=fp-role-manager\n\n";
+
+echo "8. FLEXIBLE CONFIGURATION:\n";
+echo "   - No preset configurations\n";
+echo "   - Works with any WordPress role\n";
+echo "   - Compatible with role management plugins\n";
+echo "   - Granular control over admin interface\n";
+echo "   - Plugin-level access control\n\n";
 
 echo "✓ Plugin is ready for production use!\n";
 ?>
