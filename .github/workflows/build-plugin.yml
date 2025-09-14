@@ -1,0 +1,70 @@
+name: Build WordPress Plugin
+
+on:
+  # Trigger on release creation
+  release:
+    types: [created]
+  
+  # Allow manual triggering
+  workflow_dispatch:
+  
+  # Trigger on push to main branch
+  push:
+    branches: [ main ]
+  
+  # Trigger on pull requests to main
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Create plugin directory
+      run: |
+        mkdir -p fp-wp-role-manager
+    
+    - name: Copy plugin files
+      run: |
+        # Copy main plugin file
+        cp fp-wp-role-manager.php fp-wp-role-manager/
+        
+        # Copy assets directory
+        cp -r assets fp-wp-role-manager/
+        
+        # Copy README for plugin documentation
+        cp README.md fp-wp-role-manager/
+        
+        # Verify structure
+        echo "Plugin structure:"
+        find fp-wp-role-manager -type f
+    
+    - name: Create ZIP artifact
+      run: |
+        zip -r fp-wp-role-manager.zip fp-wp-role-manager/
+        
+        # Show ZIP contents for verification
+        echo "ZIP contents:"
+        unzip -l fp-wp-role-manager.zip
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: fp-wp-role-manager-plugin
+        path: fp-wp-role-manager.zip
+        retention-days: 30
+    
+    - name: Upload to release (if release event)
+      if: github.event_name == 'release'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./fp-wp-role-manager.zip
+        asset_name: fp-wp-role-manager.zip
+        asset_content_type: application/zip

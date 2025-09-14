@@ -25,9 +25,28 @@ Il plugin include un ruolo di esempio "Restaurant Manager" che può essere utili
 
 ## Installazione
 
+### Download automatico (consigliato)
+
+Il plugin è disponibile come archivio ZIP pronto per WordPress:
+
+1. **Dalle Release**: Vai alla sezione [Releases](../../releases) e scarica l'ultimo `fp-wp-role-manager.zip`
+2. **Dalle Actions**: Vai su [Actions](../../actions) e scarica l'artifact dall'ultima build
+
+### Installazione su WordPress
+
+1. Nel tuo admin WordPress, vai su **Plugin > Aggiungi nuovo**
+2. Clicca **Carica plugin**
+3. Seleziona il file `fp-wp-role-manager.zip` scaricato
+4. Clicca **Installa ora** e poi **Attiva**
+5. Vai su "Strumenti" > "Role Manager" per configurare i permessi
+
+### Installazione manuale
+
 1. Carica i file del plugin nella directory `/wp-content/plugins/fp-wp-role-manager/`
 2. Attiva il plugin attraverso il menu 'Plugins' di WordPress
 3. Vai su "Strumenti" > "Role Manager" per configurare i permessi
+
+> 📋 Per maggiori dettagli sul processo di build, consulta [BUILD.md](BUILD.md)
 
 ## Configurazione
 
