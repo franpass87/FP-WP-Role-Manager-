@@ -1,26 +1,27 @@
 # FP WordPress Role Manager
 
-Un plugin WordPress per la gestione avanzata dei ruoli utente e del controllo della visibilità dei menu amministrativi.
+Un plugin WordPress per la gestione avanzata dei ruoli utente e del controllo granulare della visibilità dei menu amministrativi e dell'accesso ai plugin.
 
 ## Descrizione
 
-Questo plugin permette di gestire i ruoli utente di WordPress controllando quali sezioni dell'area amministrativa possono vedere specifici ruoli. È particolarmente utile per creare ruoli personalizzati con accesso limitato a determinate funzionalità.
+Questo plugin permette di gestire qualsiasi ruolo utente di WordPress controllando con precisione quali sezioni dell'area amministrativa e quali plugin possono utilizzare specifici ruoli. È particolarmente utile per creare configurazioni personalizzate con accesso limitato a determinate funzionalità.
 
-## Esempio d'uso
+## Caratteristiche Principali
 
-Il plugin include un ruolo di esempio "Restaurant Manager" che può essere utilizzato per gestori di ristoranti che necessitano di accedere solo a specifiche sezioni dell'admin WordPress, come:
+Il plugin offre un approccio flessibile e generico per la gestione dei permessi:
 
-- Gestione post e contenuti
-- Caricamento media
-- Prenotazioni ristorante (se presente un plugin dedicato)
-- Gestione ordini (WooCommerce)
+- **Configurazione per Qualsiasi Ruolo**: Gestisci editor, autori, contributor o ruoli personalizzati
+- **Controllo Menu Amministrativi**: Decidi quali sezioni dell'admin WordPress sono visibili
+- **Gestione Plugin**: Controlla l'accesso ai menu dei plugin installati
+- **Interfaccia Pulita**: Inizia con configurazione vuota, senza preset predefiniti
 
 ## Funzionalità
 
-- ✅ Creazione automatica del ruolo "Restaurant Manager"
+- ✅ Configurazione di qualsiasi ruolo WordPress esistente
 - ✅ Controllo granulare dei menu amministrativi visibili per ogni ruolo
+- ✅ Gestione dell'accesso ai plugin installati
 - ✅ Interfaccia di configurazione semplice e intuitiva
-- ✅ Supporto per ruoli personalizzati
+- ✅ Nessuna configurazione predefinita - inizi da zero
 - ✅ Preservazione delle impostazioni durante disattivazione/riattivazione
 
 ## Installazione
@@ -38,37 +39,49 @@ Il plugin è disponibile come archivio ZIP pronto per WordPress:
 2. Clicca **Carica plugin**
 3. Seleziona il file `fp-wp-role-manager.zip` scaricato
 4. Clicca **Installa ora** e poi **Attiva**
-5. Vai su "Strumenti" > "Role Manager" per configurare i permessi
+5. Vai su "Strumenti" > "Role Manager" per iniziare la configurazione
 
 ### Installazione manuale
 
 1. Carica i file del plugin nella directory `/wp-content/plugins/fp-wp-role-manager/`
 2. Attiva il plugin attraverso il menu 'Plugins' di WordPress
-3. Vai su "Strumenti" > "Role Manager" per configurare i permessi
+3. Vai su "Strumenti" > "Role Manager" per iniziare la configurazione
 
 > 📋 Per maggiori dettagli sul processo di build, consulta [BUILD.md](BUILD.md)
 
 ## Configurazione
 
-### Restaurant Manager
+### Configurazione Iniziale
 
-Dopo l'attivazione, il plugin crea automaticamente il ruolo "Restaurant Manager" con le seguenti capacità:
-
-- `read` - Lettura contenuti
-- `edit_posts` - Modifica post
-- `upload_files` - Caricamento file
-- `manage_categories` - Gestione categorie
-
-### Configurazione Menu
+Dopo l'attivazione, il plugin inizia con una configurazione vuota. Segui questi passaggi:
 
 1. Vai su **Strumenti > Role Manager**
-2. Seleziona i menu che il "Restaurant Manager" può vedere
-3. Salva le impostazioni
+2. Seleziona il ruolo che vuoi configurare dal menu a tendina
+3. Scegli i menu amministrativi che il ruolo può vedere
+4. Seleziona i plugin che il ruolo può utilizzare
+5. Salva le impostazioni
+
+### Esempi di Configurazione
+
+#### Editor Limitato
+Per un editor che può gestire solo contenuti:
+- **Menu consentiti**: Posts, Media, Pages
+- **Plugin consentiti**: Eventuali plugin di editor di testo
+
+#### Gestore E-commerce
+Per un utente che gestisce solo un negozio online:
+- **Menu consentiti**: Posts, Media
+- **Plugin consentiti**: WooCommerce, plugin di pagamento
+
+#### Content Manager
+Per chi gestisce solo contenuti specifici:
+- **Menu consentiti**: Posts, Media, Comments
+- **Plugin consentiti**: Plugin SEO, plugin di backup
 
 ### Menu disponibili per configurazione:
 
 - Posts (Articoli)
-- Media (File multimediali)
+- Media (File multimediali) 
 - Pages (Pagine)
 - Comments (Commenti)
 - Appearance (Aspetto)
@@ -78,11 +91,15 @@ Dopo l'attivazione, il plugin crea automaticamente il ruolo "Restaurant Manager"
 - Settings (Impostazioni)
 - Role Manager (Questo plugin)
 
+### Plugin supportati:
+
+Il plugin rileva automaticamente tutti i plugin attivi e permette di configurare l'accesso ai loro menu amministrativi per ciascun ruolo.
+
 ## Sviluppo e Estensioni
 
 ### Aggiungere nuovi ruoli
 
-Il plugin può essere facilmente esteso per supportare ruoli aggiuntivi modificando il file principale `fp-wp-role-manager.php`.
+Il plugin funziona con qualsiasi ruolo WordPress esistente. Per ruoli personalizzati, utilizza plugin specializzati nella creazione di ruoli e poi configura l'accesso con questo plugin.
 
 ### Hook disponibili
 
@@ -109,6 +126,7 @@ Per problemi o domande, apri una issue su GitHub.
 
 ### 1.0.0
 - Prima release
-- Ruolo Restaurant Manager
-- Controllo menu amministrativi
-- Interfaccia di configurazione
+- Interfaccia generica per configurazione ruoli
+- Controllo menu amministrativi per qualsiasi ruolo
+- Gestione accesso plugin per ruolo
+- Configurazione vuota iniziale (no preset)
