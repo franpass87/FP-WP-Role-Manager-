@@ -17,12 +17,15 @@ Il plugin offre un approccio flessibile e generico per la gestione dei permessi:
 
 ## Funzionalità
 
+- ✅ **Creazione di nuovi ruoli personalizzati** - Crea ruoli con nomi personalizzati
 - ✅ Configurazione di qualsiasi ruolo WordPress esistente
 - ✅ Controllo granulare dei menu amministrativi visibili per ogni ruolo
 - ✅ Gestione dell'accesso ai plugin installati
+- ✅ **Eliminazione ruoli personalizzati** - Rimuovi i ruoli creati (non quelli predefiniti)
 - ✅ Interfaccia di configurazione semplice e intuitiva
 - ✅ Nessuna configurazione predefinita - inizi da zero
 - ✅ Preservazione delle impostazioni durante disattivazione/riattivazione
+- ✅ **Validazione avanzata** - Controllo formato nome ruolo e sicurezza
 
 ## Installazione
 
@@ -53,10 +56,27 @@ Il plugin è disponibile come archivio ZIP pronto per WordPress:
 
 ### Configurazione Iniziale
 
-Dopo l'attivazione, il plugin inizia con una configurazione vuota. Segui questi passaggi:
+Dopo l'attivazione, il plugin inizia con una configurazione vuota. Hai due opzioni:
+
+#### **Opzione 1: Crea un Nuovo Ruolo Personalizzato**
 
 1. Vai su **Strumenti > Role Manager**
-2. Seleziona il ruolo che vuoi configurare dal menu a tendina
+2. Nella sezione "Crea Nuovo Ruolo":
+   - Inserisci il **Nome Ruolo (chiave)** (es: `content_manager`)
+     - Solo lettere minuscole, numeri e underscore
+     - Minimo 3 caratteri
+   - Inserisci opzionalmente il **Nome Visualizzato** (es: "Content Manager")
+3. Clicca **"Crea Nuovo Ruolo"**
+4. Verrai automaticamente reindirizzato alla configurazione del nuovo ruolo
+5. Scegli i menu amministrativi che il ruolo può vedere
+6. Seleziona i plugin che il ruolo può utilizzare
+7. Salva le impostazioni
+
+#### **Opzione 2: Configura un Ruolo Esistente**
+
+1. Vai su **Strumenti > Role Manager**
+2. Nella sezione "Configura Ruolo Esistente":
+   - Seleziona il ruolo che vuoi configurare dal menu a tendina
 3. Scegli i menu amministrativi che il ruolo può vedere
 4. Seleziona i plugin che il ruolo può utilizzare
 5. Salva le impostazioni
@@ -94,6 +114,27 @@ Per chi gestisce solo contenuti specifici:
 ### Plugin supportati:
 
 Il plugin rileva automaticamente tutti i plugin attivi e permette di configurare l'accesso ai loro menu amministrativi per ciascun ruolo.
+
+### Gestione Ruoli Personalizzati
+
+Il plugin permette la gestione completa dei ruoli personalizzati:
+
+- **Creazione**: Crea nuovi ruoli con nomi personalizzati
+- **Configurazione**: Configura permessi di accesso per menu e plugin
+- **Eliminazione**: Rimuovi ruoli personalizzati (i ruoli predefiniti di WordPress sono protetti)
+
+#### Sicurezza e Validazione
+
+- Validazione del formato del nome ruolo (solo lettere minuscole, numeri, underscore)
+- Controllo unicità del nome ruolo
+- Protezione CSRF tramite nonces
+- Controllo capabilities per tutte le operazioni
+
+#### Note Importanti
+
+- I ruoli predefiniti di WordPress (Administrator, Editor, Author, Contributor, Subscriber) non possono essere eliminati
+- I ruoli personalizzati creati possono essere eliminati solo attraverso questo plugin
+- L'eliminazione di un ruolo rimuove anche la sua configurazione dalle impostazioni del plugin
 
 ## Sviluppo e Estensioni
 

@@ -125,6 +125,62 @@
     color: #856404;
 }
 
+/* New Role Creation Styles */
+.fp-create-role-section, .fp-select-role-section {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    padding: 20px;
+    margin: 20px 0;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.fp-create-role-section h3, .fp-select-role-section h3 {
+    margin-top: 0;
+    color: #0073aa;
+    border-bottom: 2px solid #0073aa;
+    padding-bottom: 10px;
+}
+
+.fp-divider {
+    text-align: center;
+    margin: 30px 0;
+    position: relative;
+}
+
+.fp-divider hr {
+    border: none;
+    height: 1px;
+    background: #ddd;
+    margin: 0;
+}
+
+.fp-divider span {
+    background: #f1f1f1;
+    padding: 0 20px;
+    color: #666;
+    font-weight: 600;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.fp-create-role-section .regular-text {
+    width: 300px;
+}
+
+/* Role management styles */
+.fp-role-manager .card h3 .button-link-delete {
+    font-size: 12px;
+    vertical-align: middle;
+    margin-left: 10px;
+}
+
+.fp-role-manager .card h3 .button-link-delete:hover {
+    color: #dc3232 !important;
+}
+
 /* Empty state styling */
 .fp-role-manager .card:last-child {
     text-align: center;
@@ -149,6 +205,10 @@
     }
     
     .fp-role-manager #fp_role_selector {
+        width: 100%;
+    }
+    
+    .fp-create-role-section .regular-text {
         width: 100%;
     }
 }
