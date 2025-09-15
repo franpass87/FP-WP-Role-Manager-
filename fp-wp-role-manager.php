@@ -90,6 +90,129 @@ class FP_WP_Role_Manager {
     public function admin_init() {
         // Register settings
         register_setting('fp_role_manager_settings', 'fp_role_manager_settings');
+        
+        // Handle role creation
+        $this->handle_role_creation();
+        
+        // Handle role deletion
+        $this->handle_role_deletion();
+    }
+    
+    /**
+     * Handle role deletion
+     */
+    private function handle_role_deletion() {
+        if (isset($_POST['fp_delete_role']) && isset($_POST['fp_delete_role_name']) && current_user_can('manage_options')) {
+            // Verify nonce
+            if (!wp_verify_nonce($_POST['fp_delete_role_nonce'], 'fp_delete_role_nonce')) {
+                add_action('admin_notices', function() {
+                    echo '<div class="notice notice-error is-dismissible"><p>' . __('Errore di sicurezza. Riprova.', 'fp-wp-role-manager') . '</p></div>';
+                });
+                return;
+            }
+            
+            $role_to_delete = sanitize_text_field($_POST['fp_delete_role_name']);
+            
+            // Don't allow deletion of core WordPress roles
+            $core_roles = array('administrator', 'editor', 'author', 'contributor', 'subscriber');
+            if (in_array($role_to_delete, $core_roles)) {
+                add_action('admin_notices', function() {
+                    echo '<div class="notice notice-error is-dismissible"><p>' . __('Non puoi eliminare i ruoli predefiniti di WordPress.', 'fp-wp-role-manager') . '</p></div>';
+                });
+                return;
+            }
+            
+            // Check if role exists
+            if (!get_role($role_to_delete)) {
+                add_action('admin_notices', function() use ($role_to_delete) {
+                    echo '<div class="notice notice-error is-dismissible"><p>' . sprintf(__('Il ruolo "%s" non esiste.', 'fp-wp-role-manager'), esc_html($role_to_delete)) . '</p></div>';
+                });
+                return;
+            }
+            
+            // Remove the role
+            remove_role($role_to_delete);
+            
+            // Also remove from plugin settings
+            $settings = get_option('fp_role_manager_settings', array());
+            if (isset($settings[$role_to_delete])) {
+                unset($settings[$role_to_delete]);
+                update_option('fp_role_manager_settings', $settings);
+            }
+            
+            add_action('admin_notices', function() use ($role_to_delete) {
+                echo '<div class="notice notice-success is-dismissible"><p>' . sprintf(__('Ruolo "%s" eliminato con successo!', 'fp-wp-role-manager'), esc_html($role_to_delete)) . '</p></div>';
+            });
+            
+            // Redirect to prevent resubmission
+            wp_redirect(admin_url('tools.php?page=fp-role-manager'));
+            exit;
+        }
+    }
+    
+    /**
+     * Handle new role creation
+     */
+    private function handle_role_creation() {
+        if (isset($_POST['fp_create_new_role']) && isset($_POST['fp_new_role_name']) && current_user_can('manage_options')) {
+            // Verify nonce
+            if (!wp_verify_nonce($_POST['fp_create_role_nonce'], 'fp_create_role_nonce')) {
+                add_action('admin_notices', function() {
+                    echo '<div class="notice notice-error is-dismissible"><p>' . __('Errore di sicurezza. Riprova.', 'fp-wp-role-manager') . '</p></div>';
+                });
+                return;
+            }
+            
+            $new_role_name = sanitize_text_field($_POST['fp_new_role_name']);
+            $new_role_display_name = sanitize_text_field($_POST['fp_new_role_display_name']);
+            
+            if (empty($new_role_name)) {
+                add_action('admin_notices', function() {
+                    echo '<div class="notice notice-error is-dismissible"><p>' . __('Il nome del ruolo non può essere vuoto.', 'fp-wp-role-manager') . '</p></div>';
+                });
+                return;
+            }
+            
+            // Validate role name format (only lowercase letters, numbers, underscores)
+            if (!preg_match('/^[a-z0-9_]+$/', $new_role_name)) {
+                add_action('admin_notices', function() {
+                    echo '<div class="notice notice-error is-dismissible"><p>' . __('Il nome del ruolo può contenere solo lettere minuscole, numeri e underscore.', 'fp-wp-role-manager') . '</p></div>';
+                });
+                return;
+            }
+            
+            // Check if role already exists
+            if (get_role($new_role_name)) {
+                add_action('admin_notices', function() use ($new_role_name) {
+                    echo '<div class="notice notice-error is-dismissible"><p>' . sprintf(__('Il ruolo "%s" esiste già.', 'fp-wp-role-manager'), esc_html($new_role_name)) . '</p></div>';
+                });
+                return;
+            }
+            
+            // Create the new role with basic capabilities
+            $result = add_role(
+                $new_role_name,
+                $new_role_display_name ?: $new_role_name,
+                array(
+                    'read' => true,
+                )
+            );
+            
+            if ($result) {
+                add_action('admin_notices', function() use ($new_role_display_name, $new_role_name) {
+                    $display = $new_role_display_name ?: $new_role_name;
+                    echo '<div class="notice notice-success is-dismissible"><p>' . sprintf(__('Ruolo "%s" creato con successo!', 'fp-wp-role-manager'), esc_html($display)) . '</p></div>';
+                });
+                
+                // Redirect to configure the new role
+                wp_redirect(admin_url('tools.php?page=fp-role-manager&role=' . urlencode($new_role_name)));
+                exit;
+            } else {
+                add_action('admin_notices', function() {
+                    echo '<div class="notice notice-error is-dismissible"><p>' . __('Errore durante la creazione del ruolo.', 'fp-wp-role-manager') . '</p></div>';
+                });
+            }
+        }
     }
     
     /**
@@ -236,9 +359,55 @@ class FP_WP_Role_Manager {
             
             <div class="fp-role-info">
                 <h4><?php _e('Gestione Ruoli WordPress', 'fp-wp-role-manager'); ?></h4>
-                <p><?php _e('Configura quali menu amministrativi e plugin possono vedere i diversi ruoli utente. Seleziona un ruolo per iniziare la configurazione.', 'fp-wp-role-manager'); ?></p>
+                <p><?php _e('Crea nuovi ruoli personalizzati o configura i ruoli esistenti. Puoi controllare quali menu amministrativi e plugin possono vedere i diversi ruoli utente.', 'fp-wp-role-manager'); ?></p>
             </div>
             
+            <!-- Create New Role Form -->
+            <form method="post" action="" id="fp-create-role-form">
+                <?php wp_nonce_field('fp_create_role_nonce', 'fp_create_role_nonce'); ?>
+                
+                <div class="fp-create-role-section">
+                    <h3><?php _e('Crea Nuovo Ruolo', 'fp-wp-role-manager'); ?></h3>
+                    <table class="form-table">
+                        <tr>
+                            <th scope="row">
+                                <label for="fp_new_role_name"><?php _e('Nome Ruolo (chiave)', 'fp-wp-role-manager'); ?></label>
+                            </th>
+                            <td>
+                                <input type="text" name="fp_new_role_name" id="fp_new_role_name" class="regular-text" 
+                                       placeholder="<?php _e('es: content_manager', 'fp-wp-role-manager'); ?>" />
+                                <p class="description"><?php _e('Nome tecnico del ruolo (solo lettere minuscole, numeri e underscore).', 'fp-wp-role-manager'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="fp_new_role_display_name"><?php _e('Nome Visualizzato', 'fp-wp-role-manager'); ?></label>
+                            </th>
+                            <td>
+                                <input type="text" name="fp_new_role_display_name" id="fp_new_role_display_name" class="regular-text" 
+                                       placeholder="<?php _e('es: Content Manager', 'fp-wp-role-manager'); ?>" />
+                                <p class="description"><?php _e('Nome del ruolo che verrà mostrato nell\'interfaccia (opzionale).', 'fp-wp-role-manager'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"></th>
+                            <td>
+                                <button type="submit" name="fp_create_new_role" class="button button-primary">
+                                    <?php _e('Crea Nuovo Ruolo', 'fp-wp-role-manager'); ?>
+                                </button>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </form>
+            
+            <div class="fp-divider">
+                <hr>
+                <span><?php _e('OPPURE', 'fp-wp-role-manager'); ?></span>
+                <hr>
+            </div>
+            
+            <!-- Configure Existing Role Form -->
             <form method="post" action="options.php" id="fp-role-manager-form">
                 <?php
                 settings_fields('fp_role_manager_settings');
@@ -258,24 +427,28 @@ class FP_WP_Role_Manager {
                 }
                 ?>
                 
-                <table class="form-table">
-                    <tr>
-                        <th scope="row">
-                            <label for="fp_role_selector"><?php _e('Seleziona Ruolo da Configurare', 'fp-wp-role-manager'); ?></label>
-                        </th>
-                        <td>
-                            <select name="fp_role_selector" id="fp_role_selector" class="fp-role-selector">
-                                <option value=""><?php _e('-- Seleziona un ruolo --', 'fp-wp-role-manager'); ?></option>
-                                <?php foreach ($available_roles as $role => $name): ?>
-                                    <option value="<?php echo esc_attr($role); ?>" <?php selected($selected_role, $role); ?>>
-                                        <?php echo esc_html($name); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                            <p class="description"><?php _e('Seleziona il ruolo per il quale vuoi configurare i permessi di accesso.', 'fp-wp-role-manager'); ?></p>
-                        </td>
-                    </tr>
-                </table>
+                <!-- Existing Role Selection -->
+                <div class="fp-select-role-section">
+                    <h3><?php _e('Configura Ruolo Esistente', 'fp-wp-role-manager'); ?></h3>
+                    <table class="form-table">
+                        <tr>
+                            <th scope="row">
+                                <label for="fp_role_selector"><?php _e('Seleziona Ruolo da Configurare', 'fp-wp-role-manager'); ?></label>
+                            </th>
+                            <td>
+                                <select name="fp_role_selector" id="fp_role_selector" class="fp-role-selector">
+                                    <option value=""><?php _e('-- Seleziona un ruolo --', 'fp-wp-role-manager'); ?></option>
+                                    <?php foreach ($available_roles as $role => $name): ?>
+                                        <option value="<?php echo esc_attr($role); ?>" <?php selected($selected_role, $role); ?>>
+                                            <?php echo esc_html($name); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <p class="description"><?php _e('Seleziona il ruolo per il quale vuoi configurare i permessi di accesso.', 'fp-wp-role-manager'); ?></p>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
                 
                 <?php if ($selected_role && isset($available_roles[$selected_role])): ?>
                     <div class="fp-role-section active" data-role="<?php echo esc_attr($selected_role); ?>">
@@ -367,7 +540,25 @@ class FP_WP_Role_Manager {
                 <h2><?php _e('Ruoli Configurati', 'fp-wp-role-manager'); ?></h2>
                 <?php foreach ($settings as $role => $config): ?>
                     <div class="card">
-                        <h3><?php echo esc_html(isset($available_roles[$role]) ? $available_roles[$role] : $role); ?></h3>
+                        <h3>
+                            <?php echo esc_html(isset($available_roles[$role]) ? $available_roles[$role] : $role); ?>
+                            
+                            <?php 
+                            // Show delete button for custom roles (not core WordPress roles)
+                            $core_roles = array('administrator', 'editor', 'author', 'contributor', 'subscriber');
+                            if (!in_array($role, $core_roles)): 
+                            ?>
+                                <form method="post" action="" style="display: inline; float: right;" 
+                                      onsubmit="return confirm('Sei sicuro di voler eliminare questo ruolo? Questa azione non può essere annullata.');">
+                                    <?php wp_nonce_field('fp_delete_role_nonce', 'fp_delete_role_nonce'); ?>
+                                    <input type="hidden" name="fp_delete_role_name" value="<?php echo esc_attr($role); ?>" />
+                                    <button type="submit" name="fp_delete_role" class="button button-small button-link-delete" 
+                                            style="color: #a00; text-decoration: none;">
+                                        <?php _e('Elimina Ruolo', 'fp-wp-role-manager'); ?>
+                                    </button>
+                                </form>
+                            <?php endif; ?>
+                        </h3>
                         <p><strong><?php _e('Menu consentiti:', 'fp-wp-role-manager'); ?></strong></p>
                         <ul>
                             <?php 
@@ -400,7 +591,7 @@ class FP_WP_Role_Manager {
             <?php else: ?>
                 <div class="card">
                     <h3><?php _e('Nessuna Configurazione', 'fp-wp-role-manager'); ?></h3>
-                    <p><?php _e('Non ci sono ancora configurazioni salvate. Seleziona un ruolo per iniziare.', 'fp-wp-role-manager'); ?></p>
+                    <p><?php _e('Non ci sono ancora configurazioni salvate. Crea un nuovo ruolo o seleziona un ruolo esistente per iniziare.', 'fp-wp-role-manager'); ?></p>
                 </div>
             <?php endif; ?>
         </div>
