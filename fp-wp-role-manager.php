@@ -145,7 +145,7 @@ class FP_WP_Role_Manager {
             });
             
             // Redirect to prevent resubmission
-            wp_redirect(admin_url('tools.php?page=fp-role-manager'));
+            wp_redirect(admin_url('admin.php?page=fp-role-manager'));
             exit;
         }
     }
@@ -205,7 +205,7 @@ class FP_WP_Role_Manager {
                 });
                 
                 // Redirect to configure the new role
-                wp_redirect(admin_url('tools.php?page=fp-role-manager&role=' . urlencode($new_role_name)));
+                wp_redirect(admin_url('admin.php?page=fp-role-manager&role=' . urlencode($new_role_name)));
                 exit;
             } else {
                 add_action('admin_notices', function() {
@@ -220,7 +220,7 @@ class FP_WP_Role_Manager {
      */
     public function admin_enqueue_scripts($hook) {
         // Only load on our settings page
-        if ($hook !== 'tools_page_fp-role-manager') {
+        if ($hook !== 'toplevel_page_fp-role-manager') {
             return;
         }
         
@@ -244,12 +244,14 @@ class FP_WP_Role_Manager {
      * Add admin menu
      */
     public function admin_menu() {
-        add_management_page(
+        add_menu_page(
             __('Role Manager', 'fp-wp-role-manager'),
             __('Role Manager', 'fp-wp-role-manager'),
             'manage_options',
             'fp-role-manager',
-            array($this, 'admin_page')
+            array($this, 'admin_page'),
+            'dashicons-admin-users',
+            30
         );
     }
     
@@ -585,7 +587,7 @@ class FP_WP_Role_Manager {
                             ?>
                         </ul>
                         
-                        <p><a href="<?php echo admin_url('tools.php?page=fp-role-manager&role=' . urlencode($role)); ?>" class="button"><?php _e('Modifica Configurazione', 'fp-wp-role-manager'); ?></a></p>
+                        <p><a href="<?php echo admin_url('admin.php?page=fp-role-manager&role=' . urlencode($role)); ?>" class="button"><?php _e('Modifica Configurazione', 'fp-wp-role-manager'); ?></a></p>
                     </div>
                 <?php endforeach; ?>
             <?php else: ?>
